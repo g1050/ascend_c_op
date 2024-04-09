@@ -1,0 +1,9 @@
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/CMakeFiles/edit_cache.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/CMakeFiles/rebuild_cache.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/cmake/cpu/CMakeFiles/add_cpu.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/cmake/cpu/CMakeFiles/edit_cache.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/cmake/cpu/CMakeFiles/rebuild_cache.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/cmake/npu/CMakeFiles/add_npu.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/cmake/npu/CMakeFiles/add_sim.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/cmake/npu/CMakeFiles/edit_cache.dir
+/data/xkgao/code/ascend_c_op/SinhCustom/debug/AddKernelInvocation/build/cmake/npu/CMakeFiles/rebuild_cache.dir

@@ -1,2 +1,4 @@
 SinhCustom/build_out/
 aclnn_online_model/build/
+aclnn_online_model/input/
+aclnn_online_model/output/

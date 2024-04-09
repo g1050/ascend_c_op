@@ -13,6 +13,8 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   for (int i = 0; i < x1_shape->GetStorageShape().GetDimNum(); i++)
     data_sz *= x1_shape->GetStorageShape().GetDim(i);
   tiling.set_size(data_sz);
+  tiling.set_totalLength(data_sz);
+  tiling.set_tileNum(8);
   context->SetBlockDim(8);
   tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
   context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());

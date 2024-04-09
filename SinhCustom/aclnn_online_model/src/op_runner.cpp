@@ -307,17 +307,29 @@ bool OpRunner::RunOp()
     size_t workspaceSize = 0;
     aclOpExecutor *handle = nullptr;
     //添加计算workspace大小并申请内存代码
-   
     void *workspace = nullptr;
+    auto ret = aclnnSinhCustomGetWorkspaceSize(inputTensor_[0], outputTensor_[0],
+                                              &workspaceSize, &handle);
+    if (ret != ACL_SUCCESS) {
+        (void)aclrtDestroyStream(stream);
+        ERROR_LOG("Get Operator Workspace failed. error code is %d", static_cast<int32_t>(ret));
+        return false;
+    }
+	INFO_LOG("Execute aclnnSinhCustomGetWorkspaceSize success, workspace size %lu", workspaceSize);
     if (workspaceSize != 0) {
         if (aclrtMalloc(&workspace, workspaceSize, ACL_MEM_MALLOC_NORMAL_ONLY) != ACL_SUCCESS) {
             ERROR_LOG("Malloc device memory failed");
         }
     }
     //添加执行算子代码
+    ret = aclnnSinhCustom(workspace,workspaceSize,handle,stream);
+    if (ret != ACL_SUCCESS) {
+        (void)aclrtDestroyStream(stream);
+        ERROR_LOG("aclopCompileAndExecuteV2 Operator failed. error code is %d", static_cast<int32_t>(ret));
+        return false;
+    }
 
-
-    auto ret = aclrtSynchronizeStreamWithTimeout(stream, 5000);
+    ret = aclrtSynchronizeStreamWithTimeout(stream, 5000);
     if (ret != SUCCESS) {
         ERROR_LOG("Synchronize stream failed. error code is %d", static_cast<int32_t>(ret));
         (void)aclrtDestroyStream(stream);
