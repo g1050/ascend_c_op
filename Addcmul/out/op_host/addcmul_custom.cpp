@@ -6,9 +6,19 @@
 namespace optiling {
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
 {
-
   AddcmulCustomTilingData tiling;
   const gert::StorageShape* x1_shape = context->GetInputShape(0);
+  const gert::Tensor *x1 = context->GetInputTensor(0);
+  ge::DataType x1_type = x1->GetDataType();
+  if (x1_type == ge::DT_FLOAT16){
+    context->SetTilingKey(ge::DT_FLOAT16);
+  }else if (x1_type == ge::DT_FLOAT){
+    context->SetTilingKey(ge::DT_FLOAT);
+  }else if (x1_type == ge::DT_INT8){
+    context->SetTilingKey(ge::DT_INT8);
+  }else if (x1_type == ge::DT_INT32){
+    context->SetTilingKey(ge::DT_INT32);
+  }
   int32_t data_sz = 1;
   for (int i = 0; i < x1_shape->GetStorageShape().GetDimNum(); i++)
     data_sz *= x1_shape->GetStorageShape().GetDim(i);

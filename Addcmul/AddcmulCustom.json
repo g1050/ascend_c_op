@@ -7,40 +7,40 @@
                 "name": "input_data",
                 "param_type": "required",
                 "format": [
-                    "ND"
+                    "ND","ND","ND","ND"
                 ],
                 "type": [
-                    "fp16"
+                    "fp16","fp32","int32","int8"
                 ]
             },            
             {
                 "name": "x1",
                 "param_type": "required",
                 "format": [
-                    "ND"
+                    "ND","ND","ND","ND"
                 ],
                 "type": [
-                    "fp16"
+                    "fp16","fp32","int32","int8"
                 ]
             },            
             {
                 "name": "x2",
                 "param_type": "required",
                 "format": [
-                    "ND"
+                    "ND","ND","ND","ND"
                 ],
                 "type": [
-                    "fp16"
+                    "fp16","fp32","int32","int8"
                 ]
             },            
             {
                 "name": "value",
                 "param_type": "required",
                 "format": [
-                    "ND"
+                    "ND","ND","ND","ND"
                 ],
                 "type": [
-                    "fp16"
+                    "fp16","fp32","int32","int8"
                 ]
             }
         ],
@@ -49,10 +49,10 @@
                 "name": "y",
                 "param_type": "required",
                 "format": [
-                    "ND"
+                    "ND","ND","ND","ND"
                 ],
                 "type": [
-                    "fp16"
+                    "fp16","fp32","int32","int8"
                 ]
             }
         ]

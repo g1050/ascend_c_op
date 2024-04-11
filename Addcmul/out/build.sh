@@ -30,6 +30,8 @@ if [ $target = "package" ]; then
   fi
 fi
 
+./cust*.run
+echo "success"
 # for debug
 # cd build_out
 # make
