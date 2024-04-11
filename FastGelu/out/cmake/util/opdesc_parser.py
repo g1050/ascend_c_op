@@ -22,6 +22,10 @@ SOC_TO_SHORT_SOC_MAP = {
     "ascend910b2c": "ascend910b",
     "ascend910b3": "ascend910b",
     "ascend910b4": "ascend910b",
+    "ascend910c1": "ascend910c",
+    "ascend910c2": "ascend910c",
+    "ascend910c3": "ascend910c",
+    "ascend910c4": "ascend910c",
     "ascend310p1": "ascend310p",
     "ascend310p3": "ascend310p",
     "ascend310p3vir01": "ascend310p",
@@ -83,7 +87,7 @@ class OpDesc:
     def parse_input(self: any, conf: str):
         if conf.startswith('input{}.name'.format(int(self.input_idx) + 1)):
             self.input_idx += 1
-            self.input_name.append(self._parse_str(conf))
+            self.input_name.append(self._parse_str(conf) + '_in__')
         elif conf.startswith('input{}.paramType'.format(int(self.input_idx))):
             self.input_type.append(self._parse_str(conf))
         elif conf.startswith('input{}.dtype'.format(int(self.input_idx))):
@@ -96,7 +100,7 @@ class OpDesc:
     def parse_output(self: any, conf: str):
         if conf.startswith('output{}.name'.format(int(self.output_idx) + 1)):
             self.output_idx += 1
-            self.output_name.append(self._parse_str(conf))
+            self.output_name.append(self._parse_str(conf) + '_out_')
         elif conf.startswith('output{}.paramType'.format(int(self.output_idx))):
             self.output_type.append(self._parse_str(conf))
         elif conf.startswith('output{}.dtype'.format(int(self.output_idx))):

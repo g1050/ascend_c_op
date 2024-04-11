@@ -159,7 +159,7 @@ function(add_bin_compile_target)
       )
     endif()
     add_custom_target(${BINCMP_TARGET}_${op_file}_${op_index}
-                      COMMAND export HI_PYTHON=${ASCEND_PYTHON_EXECUTABLE} && bash ${bin_script} ${BINCMP_OUT_DIR}/src/${op_type}.py ${BINCMP_OUT_DIR}/bin/${op_file}
+                      COMMAND export HI_PYTHON=${ASCEND_PYTHON_EXECUTABLE} && bash ${bin_script} ${BINCMP_OUT_DIR}/src/${op_type}.py ${BINCMP_OUT_DIR}/bin/${op_file} && echo $(MAKE)
                       WORKING_DIRECTORY ${BINCMP_OUT_DIR}
     )
     add_dependencies(${BINCMP_TARGET}_${op_file}_${op_index} ${BINCMP_TARGET} ${BINCMP_TARGET}_${op_file}_copy)
@@ -168,4 +168,25 @@ function(add_bin_compile_target)
   install(FILES ${BINCMP_OUT_DIR}/bin/binary_info_config.json
     DESTINATION ${BINCMP_INSTALL_DIR}/config/${BINCMP_COMPUTE_UNIT} OPTIONAL
   )
+
+  install(DIRECTORY ${BINCMP_OUT_DIR}/bin/${op_file}
+    DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../build_out/kernel/${BINCMP_COMPUTE_UNIT} OPTIONAL
+  )
+  install(FILES ${BINCMP_OUT_DIR}/bin/binary_info_config.json
+    DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../build_out/kernel/config/${BINCMP_COMPUTE_UNIT} OPTIONAL
+  )
+  install(FILES ${BINCMP_OUT_DIR}/bin/${op_file}.json
+    DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../build_out/kernel/config/${BINCMP_COMPUTE_UNIT} OPTIONAL
+  )
+
+endfunction()
+
+function(add_cross_compile_target)
+    cmake_parse_arguments(CROSSMP "" "TARGET;OUT_DIR;INSTALL_DIR" "" ${ARGN})
+    add_custom_target(${CROSSMP_TARGET} ALL
+                        DEPENDS ${CROSSMP_OUT_DIR}
+    )
+    install(DIRECTORY ${CROSSMP_OUT_DIR}
+            DESTINATION ${CROSSMP_INSTALL_DIR}
+    )
 endfunction()

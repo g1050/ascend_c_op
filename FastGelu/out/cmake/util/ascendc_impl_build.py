@@ -53,18 +53,37 @@ DTYPE_MAP = {"float32": ["DT_FLOAT", "float"],
     "quint16": ["DT_QUINT16", "unknown"],
     "resource": ["DT_RESOURCE", "unknown"],
     "string_ref": ["DT_STRING_REF", "unknown"],
-    "int4": ["DT_INT4", "int8_t"],
+    "int4": ["DT_INT4", "int4b_t"],
     "bfloat16": ["DT_BF16", "bfloat16_t"]}
 
+def add_dtype_fmt_option_single(x, x_n, is_ref: bool = False):
+    options = []
+    x_fmt = x.get("format")
+    x_dtype = x.get("dtype")
+    x_n_in_kernel = x_n + '_REF' if is_ref else x_n
+    options.append("-DDTYPE_{n}={t}".format(n=x_n_in_kernel, t=DTYPE_MAP.get(x_dtype)[1]))
+    options.append("-DORIG_DTYPE_{n}={ot}".format(n=x_n_in_kernel, ot=DTYPE_MAP.get(x_dtype)[0]))
+    options.append("-DFORMAT_{n}=FORMAT_{f}".format(n=x_n_in_kernel, f=x_fmt))
+    return options
+ 
 def get_dtype_fmt_options(__inputs__, __outputs__):
     options = []
-    for x in __inputs__ + __outputs__:
-        x_n = x.get("param_name").upper()
-        x_fmt = x.get("format")
-        x_dtype = x.get("dtype")
-        options.append("-DDTYPE_{n}={t}".format(n=x_n, t=DTYPE_MAP.get(x_dtype)[1]))
-        options.append("-DORIG_DTYPE_{n}={ot}".format(n=x_n, ot=DTYPE_MAP.get(x_dtype)[0]))
-        options.append("-DFORMAT_{n}=FORMAT_{f}".format(n=x_n, f=x_fmt))
+    unique_param_name_set = set()
+    for x in __inputs__:
+        if x is None:
+            continue
+        x_n = x.get("param_name")[:-5].upper()
+        unique_param_name_set.add(x_n)
+        options += add_dtype_fmt_option_single(x, x_n)
+ 
+    for x in __outputs__:
+        if x is None:
+            continue
+        x_n = x.get("param_name")[:-5].upper()
+        if x_n in unique_param_name_set:
+            options += add_dtype_fmt_option_single(x, x_n, True)
+        else:
+            options += add_dtype_fmt_option_single(x, x_n)
     return options
 
 def load_dso(so_path):
@@ -99,20 +118,18 @@ def get_kernel_source(src_file, dir_snake, dir_ex):
 '''
 
 IMPL_API = '''
-@tbe_register.register_operator("{}")
-@para_check.check_op_params({}, trans_bool_to_s8=False)
+@tbe_register.register_operator("{}", trans_bool_to_s8=False)
+@para_check.check_op_params({})
 def {}({}, kernel_name="{}", impl_mode=""):
     if get_current_build_config("enable_op_prebuild"):
         return
     __inputs__, __outputs__, __attrs__ = _build_args({})
     options = get_dtype_fmt_options(__inputs__, __outputs__)
     options += ["-x", "cce"]
-    ccec = os.environ.get('CCEC_REAL_PATH')
-    if ccec is None:
-        ccec = shutil.which("ccec")
-    if ccec != None:
-        ccec_path = os.path.dirname(ccec)
-        tikcpp_path = os.path.realpath(os.path.join(ccec_path, "..", "..", "tikcpp"))
+    bisheng = shutil.which("bisheng")
+    if bisheng != None:
+        bisheng_path = os.path.dirname(bisheng)
+        tikcpp_path = os.path.realpath(os.path.join(bisheng_path, "..", "..", "tikcpp"))
     else:
         tikcpp_path = os.path.realpath("/usr/local/Ascend/latest/compiler/tikcpp")
     options.append("-I" + tikcpp_path)
@@ -170,7 +187,7 @@ REPLAY_OP_API = '''
 '''
 
 COMPILE_OP_API = '''
-    print("start compile Ascend C operator {}. kernel name is {}")
+    print("start compile Ascend C operator {}. kernel name is " + kernel_name)
     op_type = "{}"
     code_channel = get_code_channel(src, kernel_name, op_type, options)
     op_info = OpInfo(kernel_name = kernel_name, op_type = op_type, inputs = __inputs__, outputs = __outputs__,\\
@@ -438,7 +455,7 @@ class AdpBuilder(opdesc_parser.OpDesc):
             fd.write(REPLAY_OP_API.format(self.op_type, kern_name, self.op_file, self.op_type, self.op_file,\
                 self.op_compile_option))
         else:
-            fd.write(COMPILE_OP_API.format(self.op_type, kern_name, self.op_type, ', '.join(self.input_name),\
+            fd.write(COMPILE_OP_API.format(self.op_type, self.op_type, ', '.join(self.input_name),\
                 ', '.join(self.output_name), self.op_compile_option))
 
     def _write_cap(self: any, cap_name: str, fd: object):

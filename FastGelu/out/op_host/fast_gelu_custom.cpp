@@ -7,17 +7,28 @@ namespace optiling {
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
 {
 
-  FastGeluCustomTilingData tiling;
-  const gert::StorageShape* x1_shape = context->GetInputShape(0);
-  int32_t data_sz = 1;
-  for (int i = 0; i < x1_shape->GetStorageShape().GetDimNum(); i++)
+    FastGeluCustomTilingData tiling;
+    // dtype
+    const gert::Tensor *x1 = context->GetInputTensor(0);
+    ge::DataType x1_type = x1->GetDataType();
+    if (x1_type == ge::DT_FLOAT16){
+    context->SetTilingKey(ge::DT_FLOAT16);
+    }else if (x1_type == ge::DT_FLOAT){
+    context->SetTilingKey(ge::DT_FLOAT);
+    }
+    //
+    const gert::StorageShape* x1_shape = context->GetInputShape(0);
+    int32_t data_sz = 1;
+    for (int i = 0; i < x1_shape->GetStorageShape().GetDimNum(); i++)
     data_sz *= x1_shape->GetStorageShape().GetDim(i);
-  tiling.set_size(data_sz);
-  context->SetBlockDim(8);
-  tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
-  context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
+    tiling.set_size(data_sz);    
+    tiling.set_totalLength(data_sz);
+    tiling.set_tileNum(8);
+    context->SetBlockDim(8); // ?
+    tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
+    context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
 
-  return ge::GRAPH_SUCCESS;
+    return ge::GRAPH_SUCCESS;
 }
 }
 
@@ -38,22 +49,7 @@ class FastGeluCustom : public OpDef {
 public:
     explicit FastGeluCustom(const char* name) : OpDef(name)
     {
-        this->Input("input_data")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND});
-        this->Input("x1")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND});
-        this->Input("x2")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND});
-        this->Input("value")
+        this->Input("x")
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT16, ge::DT_FLOAT})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND})
@@ -68,7 +64,7 @@ public:
 
         this->AICore()
             .SetTiling(optiling::TilingFunc);
-        this->AICore().AddConfig("ascend310p");
+        this->AICore().AddConfig("ascend310b");
 
     }
 };

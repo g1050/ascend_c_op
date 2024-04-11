@@ -23,7 +23,7 @@ foreach(compute_unit ${ASCEND_COMPUTE_UNIT})
     endif()
 
     # dynamic shape binary compile
-    if (${ENABLE_BINARY_PACKAGE})
+    if (${ENABLE_BINARY_PACKAGE} AND NOT ${ENABLE_CROSS_COMPILE})
         add_bin_compile_target(TARGET ascendc_bin_${compute_unit}
             OPS_INFO ${ASCEND_AUTOGEN_PATH}/aic-${compute_unit}-ops-info.ini
             IMPL_DIR ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33,6 +33,14 @@ foreach(compute_unit ${ASCEND_COMPUTE_UNIT})
             COMPUTE_UNIT ${compute_unit}
         )
         add_dependencies(ascendc_bin_${compute_unit} ascendc_impl_gen)
+    endif()
+
+    if (${ENABLE_CROSS_COMPILE} AND ${ENABLE_BINARY_PACKAGE})
+        add_cross_compile_target(
+            TARGET bin_${compute_unit}
+            OUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../kernel
+            INSTALL_DIR packages/vendors/${vendor_name}/op_impl/ai_core/tbe/
+        )
     endif()
 endforeach()
 
