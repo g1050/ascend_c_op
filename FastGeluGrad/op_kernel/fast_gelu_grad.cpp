@@ -16,18 +16,15 @@ class KernelFastGeluGrad{
             // address to Tensor
             dyGm.SetGlobalBuffer((__gm__ dataType*)dy + this->blockLength * GetBlockIdx(), this->blockLength);   
             xGm.SetGlobalBuffer((__gm__ dataType*)x + this->blockLength * GetBlockIdx(), this->blockLength); 
-            zGm.SetGlobalBuffer((__gm__ dataType*)z + this->blockLength * GetBlockIdx(),this->blockLength);
+            zGm.SetGlobalBuffer((__gm__ dataType*)z + this->blockLength * GetBlockIdx(), this->blockLength);
 
             pipe.InitBuffer(inQueueDy,BUFFER_NUM,this->tileLength*sizeof(dataType)); 
             pipe.InitBuffer(inQueueX,BUFFER_NUM,this->tileLength*sizeof(dataType)); 
             pipe.InitBuffer(outQueueZ,BUFFER_NUM,this->tileLength*sizeof(dataType)); 
 
             pipe.InitBuffer(tmpAbsX, this->tileLength*sizeof(dataType));
-            pipe.InitBuffer(tmpDivDown, this->tileLength*sizeof(dataType));
-            pipe.InitBuffer(tmpDivUp, this->tileLength*sizeof(dataType));
             pipe.InitBuffer(tmpMulAbsX, this->tileLength*sizeof(dataType));
             pipe.InitBuffer(tmpExpX, this->tileLength*sizeof(dataType));
-            pipe.InitBuffer(tmpExpPnX, this->tileLength*sizeof(dataType));
             pipe.InitBuffer(tmpAdd2, this->tileLength*sizeof(dataType));
 
 
@@ -45,7 +42,7 @@ class KernelFastGeluGrad{
             Alloc(this->inQueueDy,dyGm,progress);
             Alloc(this->inQueueX,xGm,progress);
         }
-        __aicore__ inline void Alloc(TQue<QuePosition::VECIN, BUFFER_NUM> &que,GlobalTensor<dataType> gm,int32_t progress){
+        __aicore__ inline void Alloc(TQue<QuePosition::VECIN, BUFFER_NUM> &que,GlobalTensor<dataType> &gm,int32_t progress){
             LocalTensor<dataType> local = que.AllocTensor<dataType>(); 
             DataCopy(local,gm[progress*this->tileLength],this->tileLength);
             que.EnQue(local);
@@ -56,22 +53,17 @@ class KernelFastGeluGrad{
             LocalTensor<dataType> dy = inQueueDy.DeQue<dataType>();
 
             LocalTensor<dataType> absX = tmpAbsX.template Get<dataType>();
-            LocalTensor<dataType> &divDown = z;
-            LocalTensor<dataType> &divUp = x;
             LocalTensor<dataType> mulAbsX = tmpMulAbsX.template Get<dataType>();
             LocalTensor<dataType> expX = tmpExpX.template Get<dataType>();
-            LocalTensor<dataType> &expPnX = divUp;
             LocalTensor<dataType> add2 = tmpAdd2.template Get<dataType>();
+            LocalTensor<dataType> &divDown = z;
+            LocalTensor<dataType> &divUp = x;
+            LocalTensor<dataType> &expPnX = divUp;
 
             dataType attr = 1.702;
             dataType attrOpp = -1.702;            
             dataType attrHalf = 0.851;
             dataType one = 1;
-            
-
-            // attr = 1.702
-            // attr_opp = 0 - attr
-            // attr_half = attr / 2
 
             // abs_x = np.abs(input_x)
             // mul_abs_x = abs_x * attr_opp # -1.702 * |x|
@@ -86,7 +78,7 @@ class KernelFastGeluGrad{
             Abs(absX,x,this->tileLength);
             Muls(mulAbsX,absX,attrOpp,this->tileLength);
             Exp(expX,mulAbsX,this->tileLength);
-            add2 = x * expX; // 可以先把add2加到结果上,add2就可以重复利用了
+            add2 = x * expX; 
             Muls(add2,add2,attr,this->tileLength);
             expPnX = x - absX;
             Muls(expPnX,expPnX,attr,this->tileLength);
@@ -99,14 +91,14 @@ class KernelFastGeluGrad{
             
             z = divUp / divDown;
             z = z * dy;
-            
+
             outQueueZ.EnQue<dataType>(z);
             inQueueX.FreeTensor(x);
             inQueueDy.FreeTensor(dy);
         }
         __aicore__ inline void CopyOut(int32_t progress){
             LocalTensor<dataType> z = outQueueZ.DeQue<dataType>();
-            DataCopy(z[progress*this->tileLength],z,this->tileLength);
+            DataCopy(zGm[progress*this->tileLength],z,this->tileLength);
             outQueueZ.FreeTensor(z);
         }
     protected:
@@ -120,14 +112,10 @@ class KernelFastGeluGrad{
         GlobalTensor<dataType> zGm;
 
         TBuf<QuePosition::VECCALC> tmpAbsX;
-        TBuf<QuePosition::VECCALC> tmpDivDown;
-        TBuf<QuePosition::VECCALC> tmpDivUp;
         TBuf<QuePosition::VECCALC> tmpMulAbsX;
         TBuf<QuePosition::VECCALC> tmpExpX;
-        TBuf<QuePosition::VECCALC> tmpExpPnX;
         TBuf<QuePosition::VECCALC> tmpAdd2;
 
-        dataType scalarValue;
         uint32_t coreNum;
         uint32_t totalLength;
         uint32_t tileLength;
@@ -136,6 +124,7 @@ class KernelFastGeluGrad{
         uint32_t tileNum ;
 
 };
+
 
 extern "C" __global__ __aicore__ void fast_gelu_grad(GM_ADDR dy, GM_ADDR x, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling) {
     GET_TILING_DATA(tiling_data, tiling);
