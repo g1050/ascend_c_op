@@ -1,40 +1,10 @@
 [
     {
-        "op": "FastGeluCustom",
+        "op": "FastGelu",
         "language":"cpp",
         "input_desc": [
             {
-                "name": "input_data",
-                "param_type": "required",
-                "format": [
-                    "ND","ND"
-                ],
-                "type": [
-                    "fp16","fp32"
-                ]
-            },            
-            {
-                "name": "x1",
-                "param_type": "required",
-                "format": [
-                    "ND","ND"
-                ],
-                "type": [
-                    "fp16","fp32"
-                ]
-            },            
-            {
-                "name": "x2",
-                "param_type": "required",
-                "format": [
-                    "ND","ND"
-                ],
-                "type": [
-                    "fp16","fp32"
-                ]
-            },            
-            {
-                "name": "value",
+                "name": "x",
                 "param_type": "required",
                 "format": [
                     "ND","ND"

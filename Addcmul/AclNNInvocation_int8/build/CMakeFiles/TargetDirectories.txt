@@ -1,7 +1,0 @@
-/data/xkgao/code/ascend_c_op/Addcmul/AclNNInvocation_int8/build/CMakeFiles/execute_add_op.dir
-/data/xkgao/code/ascend_c_op/Addcmul/AclNNInvocation_int8/build/CMakeFiles/edit_cache.dir
-/data/xkgao/code/ascend_c_op/Addcmul/AclNNInvocation_int8/build/CMakeFiles/rebuild_cache.dir
-/data/xkgao/code/ascend_c_op/Addcmul/AclNNInvocation_int8/build/CMakeFiles/list_install_components.dir
-/data/xkgao/code/ascend_c_op/Addcmul/AclNNInvocation_int8/build/CMakeFiles/install.dir
-/data/xkgao/code/ascend_c_op/Addcmul/AclNNInvocation_int8/build/CMakeFiles/install/local.dir
-/data/xkgao/code/ascend_c_op/Addcmul/AclNNInvocation_int8/build/CMakeFiles/install/strip.dir
