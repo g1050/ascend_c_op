@@ -1,0 +1,7 @@
+*bk
+*.bin
+*.tar.gz
+output
+build_out
+build
+!build_out/cust*

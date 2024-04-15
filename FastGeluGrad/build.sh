@@ -66,7 +66,8 @@ else
   cmake_run_package $target
 fi
 
-
+./build_out/custom
+echo "success install"
 # for debug
 # cd build_out
 # make
