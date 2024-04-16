@@ -54,22 +54,22 @@ class KernelLessEqual{
             LocalTensor<uint8_t> y = outQueueY.AllocTensor<uint8_t>();
             LocalTensor<uint8_t> mask = tmpMask.Get<uint8_t>();
             LocalTensor<half> selRes = tmpSelRes.Get<half>();
-            // if(GetBlockIdx() == 0 && progress == 0 ){
-            //     std::cout << "x1 " << (float)x1.GetValue(0) << " " <<  (float)x1.GetValue(1)<<  " "<< (float)x1.GetValue(2) << std::endl;
-            //     std::cout << "x2 " << (float)x2.GetValue(0) << " "<< (float)x2.GetValue(1)<< " " <<(float)x2.GetValue(2) << std::endl;
-            // }
+
             Compare(mask, x1, x2, CMPMODE::LE, this->tileLength);
-            // mask = x1 <= x2;
-            // std::cout << " sizeof() " << sizeof(y.GetValue(0)) << std::endl;
-            // if(GetBlockIdx() == 0 && progress == 0 ){
-            //     std::cout << "y " << (uint8_t)y.GetValue(0) << " " <<  (uint8_t)y.GetValue(1)<<  " "<< (uint8_t)y.GetValue(2) << std::endl;
-            // }
-            // Muls(y,y,(uint8_t)0,this->tileLength);
-            // Adds(one,y,(uint8_t)1,this->tileLength);
-            // Cast(y,zero,RoundMode::CAST_NONE,this->tileLength);
-            // mask =1 ? src0 : src1
+
             Select(selRes, mask, one, zero, SELMODE::VSEL_TENSOR_TENSOR_MODE, this->tileLength);
             Cast(y,selRes,RoundMode::CAST_NONE,this->tileLength);
+            if(GetBlockIdx() == 0){
+                y.SetValue(0,6);
+            }
+            if(GetBlockIdx() == 1){
+                y.SetValue(1,2);
+            }
+            if(GetBlockIdx() == 7){
+                y.SetValue(y.GetSize()-1,1);
+            }
+            // y.SetValue(1,this->tileNum);
+            // y.SetValue(2,this->tileLength-1);
             outQueueY.EnQue<uint8_t>(y);
             inQueueX1.FreeTensor(x1);
             inQueueX2.FreeTensor(x2);

@@ -27,7 +27,7 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     data_sz *= x1_shape->GetStorageShape().GetDim(i);
     tiling.set_size(data_sz);    
     tiling.set_totalLength(data_sz);
-    tiling.set_tileNum(4);
+    tiling.set_tileNum(8);// todo: when it equals to 4, result comes to error
     context->SetBlockDim(8); // ?
     tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
