@@ -25,10 +25,7 @@ class KernelLessEqual{
             pipe.InitBuffer(tmpOneTensor,this->tileLength*sizeof(half)); 
             pipe.InitBuffer(tmpZeroTensor,this->tileLength*sizeof(half)); 
             pipe.InitBuffer(tmpSelRes,this->tileLength*sizeof(half)); 
-            one = tmpOneTensor.Get<half>();
-            zero = tmpZeroTensor.Get<half>();
-            Muls(zero,zero,(half)0,this->tileLength);
-            Adds(one,zero,(half)1,this->tileLength);
+
         }
         __aicore__ inline void process(){
             int32_t loopCount = this->tileNum*BUFFER_NUM; 
@@ -54,20 +51,25 @@ class KernelLessEqual{
             LocalTensor<uint8_t> y = outQueueY.AllocTensor<uint8_t>();
             LocalTensor<uint8_t> mask = tmpMask.Get<uint8_t>();
             LocalTensor<half> selRes = tmpSelRes.Get<half>();
+            one = tmpOneTensor.Get<half>();
+            zero = tmpZeroTensor.Get<half>();
+            Muls(zero,zero,(half)0,this->tileLength);
+            Adds(one,zero,(half)1,this->tileLength);
 
             Compare(mask, x1, x2, CMPMODE::LE, this->tileLength);
 
-            Select(selRes, mask, one, zero, SELMODE::VSEL_TENSOR_TENSOR_MODE, this->tileLength);
+            Select(selRes, mask, one, zero, SELMODE::VSEL_TENSOR_TENSOR_MODE, this->tileLength,1, { 1, 1, 1, 8, 8, 8 });
             Cast(y,selRes,RoundMode::CAST_NONE,this->tileLength);
-            if(GetBlockIdx() == 0){
-                y.SetValue(0,6);
-            }
-            if(GetBlockIdx() == 1){
-                y.SetValue(1,2);
-            }
-            if(GetBlockIdx() == 7){
-                y.SetValue(y.GetSize()-1,1);
-            }
+            // if(GetBlockIdx() == 0){
+            //     // y.SetValue(0,(int)selRes.GetValue(0));
+            //     // y.SetValue(1,(int)selRes.GetValue(1));
+            //     y.SetValue(0,(int)x1.GetValue(0));
+            //     y.SetValue(1,(int)x2.GetValue(0));
+            // }
+            // if(GetBlockIdx() == 7){
+            //     y.SetValue(y.GetSize()-1,this->blockNum);
+            //     y.SetValue(y.GetSize()-2,this->tileLength);
+            // }
             // y.SetValue(1,this->tileNum);
             // y.SetValue(2,this->tileLength-1);
             outQueueY.EnQue<uint8_t>(y);
