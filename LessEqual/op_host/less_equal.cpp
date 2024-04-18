@@ -38,7 +38,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     tiling.set_size(data_sz);    
     tiling.set_totalLength(data_sz);
     
-
     ALIGN_NUM = BLOCK_SIZE / SIZE_OF_TYPE;
     uint32_t totalLengthAligned = ALIGN_LENGTH(data_sz,ALIGN_NUM);
     uint32_t formerNum = (totalLengthAligned / ALIGN_NUM) % BLOCK_DIM; 
