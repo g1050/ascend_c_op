@@ -11,20 +11,6 @@ class KernelAddcmul{
         __aicore__ inline KernelAddcmul(){}
         __aicore__ inline void Init(GM_ADDR input_data, GM_ADDR x1, GM_ADDR x2, GM_ADDR value, GM_ADDR y,uint32_t totalLength,uint32_t tileNum,AddcmulTilingData &tilingData){
             this->valueLength = 1;
-
-            // this->blockNum = GetBlockNum();
-            // ASSERT(this->blockNum != 0 && "block dim can not be zero");
-            // this->blockLength = totalLength / this->blockNum;
-            // this->tileNum = tileNum;
-            // ASSERT(this->tileNum != 0 && "tile num can not be zero");
-            // this->tileLength = this->blockLength / this->tileNum / BUFFER_NUM;            
-            
-            // x1Gm.SetGlobalBuffer((__gm__ dataType*)x1 + this->blockLength * GetBlockIdx(), this->blockLength); 
-            // x2Gm.SetGlobalBuffer((__gm__ dataType*)x2 + this->blockLength * GetBlockIdx(), this->blockLength); 
-            // inputDataGm.SetGlobalBuffer((__gm__ dataType*)input_data + this->blockLength * GetBlockIdx(), this->blockLength); 
-            // valueGm.SetGlobalBuffer((__gm__ dataType*)value, this->valueLength);   
-            // yGm.SetGlobalBuffer((__gm__ dataType*)y + this->blockLength * GetBlockIdx(), this->blockLength);   
-
             uint32_t offset = 0;
             if (GetBlockIdx() < tilingData.formerNum) { // x < 5     0,1,2,3,4 5个大块
                 this->blockLength = tilingData.formerLength;
@@ -33,11 +19,10 @@ class KernelAddcmul{
                 this->blockLength = tilingData.tailLength;
                 offset = tilingData.formerLength * tilingData.formerNum + tilingData.tailLength * (GetBlockIdx() - tilingData.formerNum);
             }
-            this->tileLength = this->blockLength / tilingData.tileNum / BUFFER_NUM;
-            this->tileNum = tilingData.tileNum;
+            this->tileLength = tilingData.alignNum; 
+            this->tileNum = this->blockLength / this->tileLength;
 
             // align to 32
-            this->tileLength = ALIGN_LENGTH(this->tileLength,32);
             this->valueLength = ALIGN_LENGTH(this->valueLength,32); // value's real length equals to 1
 
             x1Gm.SetGlobalBuffer((__gm__ dataType*)x1 + offset, this->blockLength); 
@@ -54,7 +39,7 @@ class KernelAddcmul{
             pipe.InitBuffer(outQueueY,BUFFER_NUM,this->tileLength*sizeof(dataType));
         }
         __aicore__ inline void process(){
-            int32_t loopCount = this->tileNum*BUFFER_NUM; 
+            int32_t loopCount = this->tileNum; 
             for(auto i = 0;i<loopCount;i++){
                 CopyIn(i);
                 Compute(i);
@@ -123,12 +108,14 @@ class KernelAddcmul{
 
 };
 
+
 template<typename dataType,typename castDataType>
 class KernelAddcmulAdapter{
     public:
         __aicore__ inline KernelAddcmulAdapter(){}
         __aicore__ inline void Init(GM_ADDR input_data, GM_ADDR x1, GM_ADDR x2, GM_ADDR value, GM_ADDR y,uint32_t totalLength,uint32_t tileNum,AddcmulTilingData tilingData){
             uint32_t offset = 0;
+            this->valueLength =1 ;
             if (GetBlockIdx() < tilingData.formerNum) { // x < 5     0,1,2,3,4 5个大块
                 this->blockLength = tilingData.formerLength;
                 offset = tilingData.formerLength * GetBlockIdx();
@@ -136,11 +123,10 @@ class KernelAddcmulAdapter{
                 this->blockLength = tilingData.tailLength;
                 offset = tilingData.formerLength * tilingData.formerNum + tilingData.tailLength * (GetBlockIdx() - tilingData.formerNum);
             }
-            this->tileLength = this->blockLength / tilingData.tileNum / BUFFER_NUM;
-            this->tileNum = tilingData.tileNum;
+            this->tileLength = tilingData.alignNum; 
+            this->tileNum = this->blockLength / this->tileLength;
 
             // align to 32
-            this->tileLength = ALIGN_LENGTH(this->tileLength,32);
             this->valueLength = ALIGN_LENGTH(this->valueLength,32); // value's real length equals to 1
 
             x1Gm.SetGlobalBuffer((__gm__ dataType*)x1 + offset, this->blockLength); 
@@ -153,12 +139,18 @@ class KernelAddcmulAdapter{
             pipe.InitBuffer(inQueueX1,BUFFER_NUM,this->tileLength*sizeof(dataType)); 
             pipe.InitBuffer(inQueueX2,BUFFER_NUM,this->tileLength*sizeof(dataType));
             pipe.InitBuffer(inQueueInputData,BUFFER_NUM,this->tileLength*sizeof(dataType));
-            pipe.InitBuffer(inQueueValue,BUFFER_NUM,this->valueLength*sizeof(dataType));
             pipe.InitBuffer(outQueueY,BUFFER_NUM,this->tileLength*sizeof(dataType));
+            pipe.InitBuffer(inQueueValue,BUFFER_NUM,this->valueLength*sizeof(dataType));
+
+            pipe.InitBuffer(tmpX1Queue,this->tileLength*sizeof(castDataType));
+            pipe.InitBuffer(tmpX2Queue,this->tileLength*sizeof(castDataType));
+            // pipe.InitBuffer(tmpInputDataQueue,BUFFER_NUM,this->tileLength*sizeof(dataType));
+            pipe.InitBuffer(tmpValueQueue,this->valueLength*sizeof(castDataType));
+            // pipe.InitBuffer(tmpYQueue,BUFFER_NUM,this->tileLength*sizeof(dataType));
 
         }
         __aicore__ inline void process(){
-            int32_t loopCount = this->tileNum*BUFFER_NUM; 
+            int32_t loopCount = this->tileNum; 
             for(auto i = 0;i<loopCount;i++){
                 CopyIn(i);
                 Compute(i);
@@ -189,23 +181,24 @@ class KernelAddcmulAdapter{
             
             LocalTensor<castDataType> tmpx1 = tmpX1Queue.template Get<castDataType>();
             LocalTensor<castDataType> tmpx2 = tmpX2Queue.template Get<castDataType>();
-            LocalTensor<castDataType> tmpInputData = tmpInputDataQueue.template Get<castDataType>();
+            // LocalTensor<castDataType> tmpInputData = tmpInputDataQueue.template Get<castDataType>();
             LocalTensor<castDataType> tmpValue = tmpValueQueue.template Get<castDataType>();
-            LocalTensor<castDataType> tmpY = tmpYQueue.template Get<castDataType>();
+            // LocalTensor<castDataType> tmpY = tmpYQueue.template Get<castDataType>();
 
             // Only support int8
             Cast(tmpx1, x1, RoundMode::CAST_NONE, this->tileLength);
             Cast(tmpx2, x2, RoundMode::CAST_NONE, this->tileLength);
-            Cast(tmpInputData, inputData, RoundMode::CAST_NONE, this->tileLength);
             Cast(tmpValue, value, RoundMode::CAST_NONE, this->valueLength);
             castDataType scalar = value.GetValue(0);
 
             tmpx1 = tmpx1*tmpx2;
             // tmpx1 = tmpx1*tmpValue;
             Muls(tmpx1,tmpx1,scalar,this->tileLength);
-            tmpY = tmpInputData + tmpx1;
+            Cast(tmpx2, inputData, RoundMode::CAST_NONE, this->tileLength);
 
-            Cast(y, tmpY, RoundMode::CAST_NONE, this->tileLength);
+            tmpx1 = tmpx1 + tmpx2;
+
+            Cast(y, tmpx1, RoundMode::CAST_NONE, this->tileLength);
 
             this->outQueueY.template EnQue<dataType>(y);
             this->inQueueX1.FreeTensor(x1);

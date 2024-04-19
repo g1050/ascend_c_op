@@ -6,7 +6,7 @@
 
 namespace optiling {
 constexpr uint32_t BLOCK_DIM = 8;
-constexpr uint32_t BLOCK_SIZE = 32;
+uint32_t BLOCK_SIZE = 256;
 constexpr uint32_t TILE_NUM = 8;
 
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
@@ -26,6 +26,7 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     context->SetTilingKey(ge::DT_FLOAT);
   }else if (x1_type == ge::DT_INT8){
     SIZE_OF_TYPE = sizeof(int8_t);
+    // BLOCK_SIZE = 32;
     context->SetTilingKey(ge::DT_INT8);
   }else if (x1_type == ge::DT_INT32){
     SIZE_OF_TYPE = sizeof(int32_t);
@@ -37,7 +38,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   for (int i = 0; i < x1_shape->GetStorageShape().GetDimNum(); i++)
     data_sz *= x1_shape->GetStorageShape().GetDim(i);
   
-  // uint32_t totalLengthAligned = ((data_sz + ALIGN_NUM - 1) / ALIGN_NUM) * ALIGN_NUM;
   uint32_t totalLengthAligned = ALIGN_LENGTH(data_sz,ALIGN_NUM);
   uint32_t formerNum = (totalLengthAligned / ALIGN_NUM) % BLOCK_DIM; 
   uint32_t tailNum = BLOCK_DIM - formerNum; // 3
@@ -48,12 +48,13 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   tiling.set_formerLength(formerLength);
   tiling.set_tailLength(tailLength);
   tiling.set_alignNum(ALIGN_NUM);
+  
   tiling.set_size(data_sz);
   tiling.set_totalLength(data_sz);
   tiling.set_tileNum(TILE_NUM);
   context->SetBlockDim(BLOCK_DIM);
   std::cout << "formerNum " << formerNum << " tailNum " << tailNum << " formerLength " << formerLength << " tailLength " << tailLength
-  << " ALIGN_NUM " << ALIGN_NUM << " SIZE_OF_TYPE " << SIZE_OF_TYPE << std::endl;
+  << " ALIGN_NUM " << ALIGN_NUM << " SIZE_OF_TYPE " << SIZE_OF_TYPE << std::endl << " data_sz " << data_sz << " totalLengthAligned " << totalLengthAligned;
   tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
   context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
 
