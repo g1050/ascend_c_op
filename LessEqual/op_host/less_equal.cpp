@@ -6,7 +6,7 @@
 
 namespace optiling {
 constexpr uint32_t BLOCK_DIM = 8;
-constexpr uint32_t BLOCK_SIZE = 32;
+uint32_t BLOCK_SIZE = 256;
 constexpr uint32_t TILE_NUM = 8;
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
 {
@@ -25,6 +25,7 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
         SIZE_OF_TYPE = sizeof(float);
     }else if (x1_type == ge::DT_INT8){
         SIZE_OF_TYPE = sizeof(int8_t);
+        BLOCK_SIZE = 32;
         context->SetTilingKey(ge::DT_INT8);
     }else if (x1_type == ge::DT_INT32){
         SIZE_OF_TYPE = sizeof(int32_t);
@@ -54,7 +55,8 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     context->SetBlockDim(BLOCK_DIM); // ?
     tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-
+std::cout << "formerNum " << formerNum << " tailNum " << tailNum << " formerLength " << formerLength << " tailLength " << tailLength
+  << " ALIGN_NUM " << ALIGN_NUM << " SIZE_OF_TYPE " << SIZE_OF_TYPE << std::endl;
     return ge::GRAPH_SUCCESS;
 }
 }

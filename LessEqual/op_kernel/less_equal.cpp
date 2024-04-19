@@ -16,11 +16,11 @@ class KernelLessEqual{
                 this->blockLength = tilingData.tailLength;
                 offset = tilingData.formerLength * tilingData.formerNum + tilingData.tailLength * (GetBlockIdx() - tilingData.formerNum);
             }
-            this->tileLength = this->blockLength / tilingData.tileNum / BUFFER_NUM;
-            this->tileNum = tilingData.tileNum;
+            this->tileLength = tilingData.alignNum; 
+            this->tileNum = this->blockLength / this->tileLength;
 
             // align to 32
-            this->tileLength = ALIGN_LENGTH(this->tileLength,32);
+            // this->tileLength = ALIGN_LENGTH(this->tileLength,16); // 对齐到32/sizeof(type)
 
             x2Gm.SetGlobalBuffer((__gm__ dataType*)x2 + offset, this->blockLength);   
             x1Gm.SetGlobalBuffer((__gm__ dataType*)x1 + offset, this->blockLength); 
@@ -37,7 +37,7 @@ class KernelLessEqual{
 
         }
         __aicore__ inline void process(){
-            int32_t loopCount = this->tileNum*BUFFER_NUM; 
+            int32_t loopCount = this->tileNum; 
             for(auto i = 0;i<loopCount;i++){
                 CopyIn(i);
                 Compute(i);
@@ -120,11 +120,14 @@ class KernelLessEqualAdapter{
                 this->blockLength = tilingData.tailLength;
                 offset = tilingData.formerLength * tilingData.formerNum + tilingData.tailLength * (GetBlockIdx() - tilingData.formerNum);
             }
-            this->tileLength = this->blockLength / tilingData.tileNum / BUFFER_NUM;
-            this->tileNum = tilingData.tileNum;
+            this->tileLength = tilingData.alignNum; 
+            this->tileNum = this->blockLength / this->tileLength;
 
+            // PRINTF("xkgao's debug info");
+            // PRINTF("this->tileLength %u ",this->tileLength);
+            // PRINTF("this->tileNum %u ",this->tileNum);
             // align to 32
-            this->tileLength = ALIGN_LENGTH(this->tileLength,32);
+            // this->tileLength = ALIGN_LENGTH(this->tileLength,32);
 
             x2Gm.SetGlobalBuffer((__gm__ dataType*)x2 + offset, this->blockLength);   
             x1Gm.SetGlobalBuffer((__gm__ dataType*)x1 + offset, this->blockLength); 
@@ -143,7 +146,7 @@ class KernelLessEqualAdapter{
 
         }
         __aicore__ inline void process(){
-            int32_t loopCount = this->tileNum*BUFFER_NUM; 
+            int32_t loopCount = this->tileNum; 
             for(auto i = 0;i<loopCount;i++){
                 CopyIn(i);
                 Compute(i);
